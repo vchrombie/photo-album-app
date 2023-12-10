@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+
+  build:
+    commands:
+      - echo "Packaging Lambda functions..."
+      - mkdir -p package
+      # - cd lambda/index-photos
+      # - zip -r ../../package/index-photos.zip .
+      - cd ../opensearch
+      - zip -r ../../package/opensearch.zip .
+      # - cd ../search-photos
+      # - zip -r ../../package/search-photos.zip .
+      - cd ../..
+
+  post_build:
+    commands:
+      - echo "Post-build stage..."
+      # Assuming you have AWS credentials and region set in the environment variables
+      # - aws lambda update-function-code --function-name index-photos-1 --zip-file fileb://package/index-photos.zip
+      - aws lambda update-function-code --function-name opensearch-1 --zip-file fileb://package/opensearch.zip
+      # - aws lambda update-function-code --function-name search-photos-1 --zip-file fileb://package/search-photos.zip
+
+artifacts:
+  files:
+    - package/*.zip

@@ -27,11 +27,24 @@ print('opensearch client configured', opensearch_client)
 
 def lambda_handler(event, context):
 
+    client = boto3.client('lex-runtime')
+
+    q = event['queryStringParameters']['q']
+    print(q)
+
+    response = client.post_text(
+        botName='PhotosBot',
+        botAlias='photosbot',
+        userId='12345678',
+        inputText=q
+    )
+    print(response)
+
     # Extract the slots from the event
-    slots = event['currentIntent']['slots']
+    slots = response['slots']
     slot_values = [value for key, value in slots.items() if value]
     print(slot_values)
-    
+
     index_name = 'photos'  # Replace with your index name
     
     # Construct the search query for OpenSearch
@@ -68,5 +81,7 @@ def lambda_handler(event, context):
     # Return the search results
     return {
         'statusCode': 200,
+        "isBase64Encoded": False,
+        "headers": { "Content-Type": "application/json" },
         'body': json.dumps(results)
     }

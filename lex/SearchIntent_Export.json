@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "schemaVersion": "1.0",
+    "importType": "LEX",
+    "importFormat": "JSON"
+  },
+  "resource": {
+    "name": "SearchIntent",
+    "version": "8",
+    "fulfillmentActivity": {
+      "type": "ReturnIntent"
+    },
+    "sampleUtterances": [
+      "{slotOne} and {slotTwo}",
+      "give me photos of {slotOne} and {slotTwo}",
+      "show me photos of {slotOne} on {slotTwo}",
+      "{slotOne} with {slotTwo}",
+      "{slotOne}"
+    ],
+    "slots": [
+      {
+        "sampleUtterances": [],
+        "slotType": "AMAZON.AlphaNumeric",
+        "obfuscationSetting": "NONE",
+        "slotConstraint": "Required",
+        "valueElicitationPrompt": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "e.g. What city?"
+            }
+          ],
+          "maxAttempts": 2
+        },
+        "priority": 1,
+        "name": "slotOne"
+      },
+      {
+        "sampleUtterances": [],
+        "slotType": "AMAZON.AlphaNumeric",
+        "obfuscationSetting": "NONE",
+        "slotConstraint": "Optional",
+        "valueElicitationPrompt": {
+          "messages": [
+            {
+              "contentType": "PlainText",
+              "content": "e.g. What city?"
+            }
+          ],
+          "maxAttempts": 2
+        },
+        "priority": 2,
+        "name": "slotTwo"
+      }
+    ],
+    "slotTypes": []
+  }
+}

@@ -1,3 +1,6 @@
 [submodule "api/swagger"]
 	path = api/swagger
 	url = https://github.com/vchrombie/ai-photo-search-columbia-f2018
+[submodule "s3"]
+	path = s3
+	url = https://github.com/vchrombie/photo-album-app-frontend

@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "AWS CloudFormation template for Photo-Album-App"
+
+Parameters:
+  GithubRepo:
+    Type: String
+    Default: "photo-album-app"
+
+  GithubBranch:
+    Type: String
+    Default: "master"
+
+  GithubToken:
+    Type: String
+    Default: ""
+
+  GithubUser:
+    Type: String
+    Default: "vchrombie"
+
+
+Resources:
+  AdminRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: admin
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"
+
+  Smartphotob1:
+    Type: "AWS::S3::Bucket"
+
+  Smartphotob2:
+    Type: "AWS::S3::Bucket"
+
+  FrontendCodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt AdminRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref Smartphoto-B1
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Repo: !Ref GithubRepo
+                Owner: !Ref GithubUser
+                Branch: !Ref GithubBranch
+                OAuthToken: !Ref GithubToken
+                PollForSourceChanges: false
+              OutputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                BucketName: !Ref Smartphoto-B1
+                Extract: true
+              InputArtifacts:
+                - Name: SourceArtifact
+              RunOrder: 1
+
+  OpenSearch:
+    Type: "AWS::OpenSearchService::Domain"
+    Properties:
+      DomainName: "photos"
+      AccessPolicies:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action: "es:*"
+            Resource: "arn:aws:es:us-east-1:aws_id:domain/photos/*"
+      ClusterConfig:
+        DedicatedMasterEnabled: "false"
+        InstanceCount: "1"
+        ZoneAwarenessEnabled: "false"
+        InstanceType: "t3.small.search"
+      EBSOptions:
+        EBSEnabled: true
+        Iops: 0
+        VolumeSize: 10
+        VolumeType: "gp2"
+      EngineVersion: OpenSearch_1.3
+
+  LexChatbot:
+    Type: AWS::Lex::Bot
+    Properties: 
+      DataPrivacy: 
+        ChildDirected: false
+      Description: "Lex Chatbot for Photo Searchs"
+      IdleSessionTTLInSeconds: 300
+      Name: "PhotoSearchBot"
+      RoleArn: "arn:aws:iam::aws_id:role/aws-service-role/lexv2.amazonaws.com/AWSServiceRoleForLexV2Bots_4V7QTD59XL"
+
+  LF1:
+    Type: AWS::Lambda::Function
+    Properties: 
+      Handler: lambda_function.handler
+      Code:
+        ZipFile: |
+          import json
+          def lambda_handler(event, context):
+              body = {
+                  "message": "Hello from Lambda!"
+              }
+              response = {
+                  "statusCode": 200,
+                  "body": json.dumps(body)
+              }
+              return response
+      FunctionName: "index-photos-lf1"
+      Role: "arn:aws:iam::aws_id:role/lambda-policy-role"
+      Runtime: python3.9
+
+  LF2:
+    Type: AWS::Lambda::Function
+    Properties: 
+      Handler: lambda_function.handler
+      Code:
+        ZipFile: |
+          import json
+          def lambda_handler(event, context):
+              body = {
+                  "message": "Hello from Lambda!"
+              }
+              response = {
+                  "statusCode": 200,
+                  "body": json.dumps(body)
+              }
+              return response
+      FunctionName: "search-photos-lf2"
+      Role: "arn:aws:iam::aws_id:role/lambda-policy-role"
+      Runtime: python3.9
+
+  LambdaCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties: 
+      Artifacts: 
+        Type: NO_ARTIFACTS
+      Description: "Codebuild for Lambdas"
+      Environment: 
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0 
+        Type: WINDOWS_CONTAINER
+      ServiceRole: "arn:aws:iam::aws_id:role/service-role/codebuild-smartphoto-lambda-pipeline-service-role"
+      Source:
+        Type: GITHUB
